@@ -1,0 +1,202 @@
+swagger: "2.0"
+info:
+  version: "0.0.1"
+  title: Potatolive Posts
+# during dev, should point to your local machine
+host: localhost:10010
+# basePath prefixes all resource paths 
+basePath: /
+# 
+schemes:
+  # tip: remove http to make production-grade
+  - http
+  - https
+# format of bodies a client can send (Content-Type)
+consumes:
+  - application/json
+# format of the responses to the client (Accepts)
+produces:
+  - application/json
+paths:
+  /warmup:
+    x-swagger-router-controller: common
+    get:
+      description: Warmup the service if hosted in Lambda.
+      operationId: warmup
+      responses:
+        "200":
+            description: Success
+            schema:
+              type: string
+        # responses may fall through to errors
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Response"
+  /posts:
+    x-swagger-router-controller: post
+    get:
+      description: Get list of posts based on a search criteira. 
+      operationId: list_post
+      parameters:
+        - name: date
+          in: query
+          type: string
+          description: Date when the post was created
+        - name: status
+          in: query
+          type: string
+          description: Status of the post
+          enum:
+            - new
+            - approved
+            - rejected
+      responses:
+        "200":
+            description: Success
+            schema:
+              type: array
+              items:
+                $ref: "#/definitions/Post"
+        # responses may fall through to errors
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Response"
+    post:
+      description: Create a new post
+      operationId: create_post
+      parameters:
+        - name: post
+          in: body
+          description: Content of the post to create
+          required: true
+          schema:
+            $ref: "#/definitions/Post"
+      responses:
+        "200":
+            description: Success
+            schema:
+              $ref: "#/definitions/Post"
+        # responses may fall through to errors
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Response"
+  /post/{id}:
+    # binds a127 app logic to a route
+    x-swagger-router-controller: post
+    get:
+      description: Returns a specific 'Post' to the caller
+      # used as the method name of the controller
+      operationId: get_post
+      parameters:
+        - name: id
+          description: Id of the post
+          in: path
+          type: string
+          required: true
+      responses:
+        "200":
+          description: Success
+          schema:
+            # a pointer to a definition
+            $ref: "#/definitions/Post"
+        # responses may fall through to errors
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Response"
+    put:
+      description: Update a specific post 
+      operationId: update_post
+      parameters:
+        - name: id
+          description: Id of the post
+          in: path
+          type: string
+          required: true
+        - name: post
+          description: post content
+          in: body
+          schema:
+            $ref: "#/definitions/Post"
+          required: true
+      responses:
+        "200": 
+          description: Success
+          schema:
+            $ref: "#/definitions/Response"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Response"
+    delete:
+      description: Delete a specific Post
+      # used as the method name of the controller
+      operationId: delete_post
+      parameters:
+        - name: id
+          description: Id of the post
+          in: path
+          type: string
+          required: true
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/Response"
+        # responses may fall through to errors
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Response"
+  /swagger:
+    x-swagger-pipe: swagger_raw
+# complex objects have schema definitions
+definitions:
+  Post:
+    properties:
+      id: 
+        type: string
+        # format: uuid
+        description: "Unique identification of the post"
+      date:
+        type: string
+        description: "Date on which the post is sent"
+      caption:
+        type: string
+        description: "Message of the post"
+      imageUrl:
+        type: string
+        description: "Image in url format"
+      profileId:
+        type: string
+        description: "Id of the profile"
+      profileName:
+        type: string
+        description: "User creating the post"
+      profilePicture:
+        type: string
+        description: "Url of the profile picture"
+      profileEmail:
+        type: string
+        format: email
+        description: "Email of the user creating the post"
+      metaDataId: 
+        type: string
+        description: "Id of the meta data. Eg the song Id dedicated"
+      status:
+        type: string
+        description: "Status of the post"
+        default: new
+        enum:
+          - new
+          - approved
+          - rejected
+  Response:
+    required:
+      - message
+    properties:
+      message:
+        type: string
